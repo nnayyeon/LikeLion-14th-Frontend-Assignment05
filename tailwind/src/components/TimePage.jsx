@@ -7,38 +7,51 @@ export default function TimePage() {
 
   // useState로 남은 시간 저장
   const [count, setCount] = useState(10);
+
   // 0초가 되면 시간 종료 메시지로 변경
   const [isFinished, setIsFinished] = useState(false);
 
   const [activeTab, setActiveTab] = useState("clock");
 
-  // useEffect + setInterval로 1초마다 갱신
+  // 현재 시각은 항상 1초마다 갱신
   useEffect(() => {
     const interval = setInterval(() => {
-      // 현재 시각 얻기
       const now = new Date();
       const timeString = now.toLocaleTimeString();
 
       setTime(timeString);
-
-      if (count <= 1) {
-        clearInterval(interval);
-        setIsFinished(true);
-        setCount(0);
-      } else {
-        setCount(count - 1);
-      }
-
     }, 1000);
 
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+  // timer 탭일 때만 카운트다운 실행
+  useEffect(() => {
+    if (activeTab !== "timer") return;
+
+    const interval = setInterval(() => {
+      setCount((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setIsFinished(true);
+
+          // 콘솔문은 타이머가 종료되었을 때만 출력
+          console.log("타이머 종료");
+
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
 
     // cleanup 함수로 clearInterval
     return () => {
       clearInterval(interval);
-      console.log("타이머 종료");
     };
-
-  }, [count]);
+  }, [activeTab]);
 
   let content;
 
@@ -53,8 +66,9 @@ export default function TimePage() {
           1초마다 시간이 업데이트됩니다
         </p>
 
-        {/* 현재 시각을 시:분:초 형식으로 화면에 표시 */}
-        <p className="font-es text-4xl font-bold text-indigo-400">{time}</p>
+        <p className="font-es text-4xl font-bold text-indigo-400">
+          {time}
+        </p>
       </div>
     );
   } else {
@@ -65,7 +79,6 @@ export default function TimePage() {
             카운트다운
           </h2>
 
-          {/* 0초가 되면 시간 종료 메시지로 변경 */}
           <p className="font-es text-3xl font-bold text-rose-300">
             💥 시간 종료!
           </p>
@@ -111,7 +124,6 @@ export default function TimePage() {
         </p>
       </div>
 
-      {/* flex 사용하기 */}
       <div className="flex gap-3 mb-6">
         <button
           onClick={() => setActiveTab("clock")}
@@ -121,7 +133,11 @@ export default function TimePage() {
         </button>
 
         <button
-          onClick={() => setActiveTab("timer")}
+          onClick={() => {
+            setActiveTab("timer");
+            setCount(10);
+            setIsFinished(false);
+          }}
           className="font-es px-5 py-2 rounded-xl bg-white/80 hover:bg-yellow-100 text-slate-600 shadow transition"
         >
           타이머 보기
